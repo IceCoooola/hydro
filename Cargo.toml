@@ -1,0 +1,54 @@
+[workspace]
+
+# See "Adding new crates" and "Moving crates" addendum sections in `RELEASING.md`
+members = [
+    "benches",
+    "hydro_deploy/core",
+    "hydro_deploy/hydro_cli",
+    "hydro_deploy/hydro_cli_examples",
+    "hydro_deploy/hydroflow_cli_integration",
+    "hydro_deploy/hydroflow_plus_cli_integration",
+    "hydroflow",
+    "hydroflow_datalog",
+    "hydroflow_datalog_core",
+    "hydroflow_lang",
+    "hydroflow_macro",
+    "hydroflow_plus",
+    "hydroflow_plus_test",
+    "hydroflow_plus_test_macro",
+    "lattices",
+    "lattices_macro",
+    "multiplatform_test",
+    "pusherator",
+    "relalg",
+    "stageleft",
+    "stageleft_macro",
+    "stageleft_test",
+    "stageleft_test_macro",
+    "stageleft_tool",
+    "topolotree",
+    "variadics",
+    "website_playground",
+]
+
+resolver = "2"
+
+[profile.release]
+strip = true      # Strip symbols from the binary
+# Previously this was "z" to minimize docker binary size while sacrificing performance. But "z"
+# doesn't make things that much smaller, `strip` is far more important for binary size. Use "3" for
+# performance.
+opt-level = 3
+lto = "fat"
+
+[profile.profile]
+inherits = "release"
+debug = 2
+lto = "off"
+strip = "none"
+
+[profile.dev.package.website_playground]
+debug-assertions = false
+
+[profile.release.package.website_playground]
+opt-level = "s"

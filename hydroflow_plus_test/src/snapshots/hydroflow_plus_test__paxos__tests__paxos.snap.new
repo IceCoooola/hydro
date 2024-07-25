@@ -1,0 +1,340 @@
+---
+source: hydroflow_plus_test/src/paxos.rs
+assertion_line: 237
+expression: builder.extract().ir()
+---
+[
+    CycleSink {
+        ident: Ident {
+            sym: cycle_0,
+        },
+        location_id: 3,
+        input: DeferTick(
+            Map {
+                f: { use crate :: __staged :: paxos :: * ; | (sorted_payload , _) | sorted_payload },
+                input: Filter {
+                    f: { use crate :: __staged :: paxos :: * ; | (sorted_payload , highest_seq) | sorted_payload . seq > * highest_seq },
+                    input: CrossProduct(
+                        Tee {
+                            inner: RefCell {
+                                value: Sort(
+                                    Union(
+                                        Map {
+                                            f: { use hydroflow_plus :: __staged :: stream :: * ; | (_ , b) | b },
+                                            input: Network {
+                                                to_location: 3,
+                                                serialize_pipeline: Some(
+                                                    Operator(
+                                                        Operator {
+                                                            path: "map",
+                                                            args: [
+                                                                "| (id , data) | { (id , hydroflow_plus :: runtime_support :: bincode :: serialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& data) . unwrap () . into ()) }",
+                                                            ],
+                                                        },
+                                                    ),
+                                                ),
+                                                sink_expr: null,
+                                                source_expr: null,
+                                                deserialize_pipeline: Some(
+                                                    Operator(
+                                                        Operator {
+                                                            path: "map",
+                                                            args: [
+                                                                "| res | { let (id , b) = res . unwrap () ; (id , hydroflow_plus :: runtime_support :: bincode :: deserialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& b) . unwrap ()) }",
+                                                            ],
+                                                        },
+                                                    ),
+                                                ),
+                                                input: CrossProduct(
+                                                    Persist(
+                                                        Map {
+                                                            f: { use hydroflow_plus :: __staged :: stream :: * ; | d | d . clone () },
+                                                            input: Source {
+                                                                source: Iter(
+                                                                    { use hydroflow_plus_cli_integration :: __staged :: deploy :: * ; panic ! () },
+                                                                ),
+                                                                location_id: 2,
+                                                            },
+                                                        },
+                                                    ),
+                                                    Source {
+                                                        source: Iter(
+                                                            { use crate :: __staged :: paxos :: * ; [ReplicaPayload { seq : 1 , key : 10 , value : "Hello again, Berkeley!" . to_string () } , ReplicaPayload { seq : 2 , key : 10 , value : "Goodbye, Berkeley" . to_string () } , ReplicaPayload { seq : 0 , key : 10 , value : "Hello, Berkeley!" . to_string () } , ReplicaPayload { seq : 3 , key : 20 , value : "Hello, SF" . to_string () } , ReplicaPayload { seq : 5 , key : 20 , value : "Goodbye, SF" . to_string () }] },
+                                                        ),
+                                                        location_id: 2,
+                                                    },
+                                                ),
+                                            },
+                                        },
+                                        CycleSource {
+                                            ident: Ident {
+                                                sym: cycle_0,
+                                            },
+                                            location_id: 3,
+                                        },
+                                    ),
+                                ),
+                            },
+                        },
+                        Tee {
+                            inner: RefCell {
+                                value: Fold {
+                                    init: { use crate :: __staged :: paxos :: * ; | | - 1 },
+                                    acc: { use crate :: __staged :: paxos :: * ; | filled_slot , (sorted_payload , highest_seq) | { let next_slot = std :: cmp :: max (* filled_slot , highest_seq) ; * filled_slot = if sorted_payload . seq == next_slot + 1 { sorted_payload . seq } else { * filled_slot } ; } },
+                                    input: CrossProduct(
+                                        Tee {
+                                            inner: RefCell {
+                                                value: Sort(
+                                                    Union(
+                                                        Map {
+                                                            f: { use hydroflow_plus :: __staged :: stream :: * ; | (_ , b) | b },
+                                                            input: Network {
+                                                                to_location: 3,
+                                                                serialize_pipeline: Some(
+                                                                    Operator(
+                                                                        Operator {
+                                                                            path: "map",
+                                                                            args: [
+                                                                                "| (id , data) | { (id , hydroflow_plus :: runtime_support :: bincode :: serialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& data) . unwrap () . into ()) }",
+                                                                            ],
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                                sink_expr: null,
+                                                                source_expr: null,
+                                                                deserialize_pipeline: Some(
+                                                                    Operator(
+                                                                        Operator {
+                                                                            path: "map",
+                                                                            args: [
+                                                                                "| res | { let (id , b) = res . unwrap () ; (id , hydroflow_plus :: runtime_support :: bincode :: deserialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& b) . unwrap ()) }",
+                                                                            ],
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                                input: CrossProduct(
+                                                                    Persist(
+                                                                        Map {
+                                                                            f: { use hydroflow_plus :: __staged :: stream :: * ; | d | d . clone () },
+                                                                            input: Source {
+                                                                                source: Iter(
+                                                                                    { use hydroflow_plus_cli_integration :: __staged :: deploy :: * ; panic ! () },
+                                                                                ),
+                                                                                location_id: 2,
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                    Source {
+                                                                        source: Iter(
+                                                                            { use crate :: __staged :: paxos :: * ; [ReplicaPayload { seq : 1 , key : 10 , value : "Hello again, Berkeley!" . to_string () } , ReplicaPayload { seq : 2 , key : 10 , value : "Goodbye, Berkeley" . to_string () } , ReplicaPayload { seq : 0 , key : 10 , value : "Hello, Berkeley!" . to_string () } , ReplicaPayload { seq : 3 , key : 20 , value : "Hello, SF" . to_string () } , ReplicaPayload { seq : 5 , key : 20 , value : "Goodbye, SF" . to_string () }] },
+                                                                        ),
+                                                                        location_id: 2,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        },
+                                                        CycleSource {
+                                                            ident: Ident {
+                                                                sym: cycle_0,
+                                                            },
+                                                            location_id: 3,
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                        Union(
+                                            CycleSource {
+                                                ident: Ident {
+                                                    sym: cycle_1,
+                                                },
+                                                location_id: 3,
+                                            },
+                                            Source {
+                                                source: Iter(
+                                                    { use crate :: __staged :: paxos :: * ; vec ! [- 1] },
+                                                ),
+                                                location_id: 3,
+                                            },
+                                        ),
+                                    ),
+                                },
+                            },
+                        },
+                    ),
+                },
+            },
+        ),
+    },
+    CycleSink {
+        ident: Ident {
+            sym: cycle_1,
+        },
+        location_id: 3,
+        input: DeferTick(
+            Map {
+                f: { use crate :: __staged :: paxos :: * ; | (kv_store , highest_seq) | highest_seq },
+                input: Fold {
+                    init: { use crate :: __staged :: paxos :: * ; | | (HashMap :: < u32 , String > :: new () , - 1) },
+                    acc: { use crate :: __staged :: paxos :: * ; | state , payload | { let ref mut kv_store = state . 0 ; let ref mut last_seq = state . 1 ; kv_store . insert (payload . key , payload . value) ; debug_assert ! (payload . seq == * last_seq + 1 , "Hole in log between seq {} and {}" , * last_seq , payload . seq) ; * last_seq = payload . seq ; println ! ("Replica kv store: {:?}" , kv_store) ; } },
+                    input: Persist(
+                        Map {
+                            f: { use crate :: __staged :: paxos :: * ; | (sorted_payload , _) | sorted_payload },
+                            input: Filter {
+                                f: { use crate :: __staged :: paxos :: * ; | (sorted_payload , highest_seq) | sorted_payload . seq <= * highest_seq },
+                                input: CrossProduct(
+                                    Tee {
+                                        inner: RefCell {
+                                            value: Sort(
+                                                Union(
+                                                    Map {
+                                                        f: { use hydroflow_plus :: __staged :: stream :: * ; | (_ , b) | b },
+                                                        input: Network {
+                                                            to_location: 3,
+                                                            serialize_pipeline: Some(
+                                                                Operator(
+                                                                    Operator {
+                                                                        path: "map",
+                                                                        args: [
+                                                                            "| (id , data) | { (id , hydroflow_plus :: runtime_support :: bincode :: serialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& data) . unwrap () . into ()) }",
+                                                                        ],
+                                                                    },
+                                                                ),
+                                                            ),
+                                                            sink_expr: null,
+                                                            source_expr: null,
+                                                            deserialize_pipeline: Some(
+                                                                Operator(
+                                                                    Operator {
+                                                                        path: "map",
+                                                                        args: [
+                                                                            "| res | { let (id , b) = res . unwrap () ; (id , hydroflow_plus :: runtime_support :: bincode :: deserialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& b) . unwrap ()) }",
+                                                                        ],
+                                                                    },
+                                                                ),
+                                                            ),
+                                                            input: CrossProduct(
+                                                                Persist(
+                                                                    Map {
+                                                                        f: { use hydroflow_plus :: __staged :: stream :: * ; | d | d . clone () },
+                                                                        input: Source {
+                                                                            source: Iter(
+                                                                                { use hydroflow_plus_cli_integration :: __staged :: deploy :: * ; panic ! () },
+                                                                            ),
+                                                                            location_id: 2,
+                                                                        },
+                                                                    },
+                                                                ),
+                                                                Source {
+                                                                    source: Iter(
+                                                                        { use crate :: __staged :: paxos :: * ; [ReplicaPayload { seq : 1 , key : 10 , value : "Hello again, Berkeley!" . to_string () } , ReplicaPayload { seq : 2 , key : 10 , value : "Goodbye, Berkeley" . to_string () } , ReplicaPayload { seq : 0 , key : 10 , value : "Hello, Berkeley!" . to_string () } , ReplicaPayload { seq : 3 , key : 20 , value : "Hello, SF" . to_string () } , ReplicaPayload { seq : 5 , key : 20 , value : "Goodbye, SF" . to_string () }] },
+                                                                    ),
+                                                                    location_id: 2,
+                                                                },
+                                                            ),
+                                                        },
+                                                    },
+                                                    CycleSource {
+                                                        ident: Ident {
+                                                            sym: cycle_0,
+                                                        },
+                                                        location_id: 3,
+                                                    },
+                                                ),
+                                            ),
+                                        },
+                                    },
+                                    Tee {
+                                        inner: RefCell {
+                                            value: Fold {
+                                                init: { use crate :: __staged :: paxos :: * ; | | - 1 },
+                                                acc: { use crate :: __staged :: paxos :: * ; | filled_slot , (sorted_payload , highest_seq) | { let next_slot = std :: cmp :: max (* filled_slot , highest_seq) ; * filled_slot = if sorted_payload . seq == next_slot + 1 { sorted_payload . seq } else { * filled_slot } ; } },
+                                                input: CrossProduct(
+                                                    Tee {
+                                                        inner: RefCell {
+                                                            value: Sort(
+                                                                Union(
+                                                                    Map {
+                                                                        f: { use hydroflow_plus :: __staged :: stream :: * ; | (_ , b) | b },
+                                                                        input: Network {
+                                                                            to_location: 3,
+                                                                            serialize_pipeline: Some(
+                                                                                Operator(
+                                                                                    Operator {
+                                                                                        path: "map",
+                                                                                        args: [
+                                                                                            "| (id , data) | { (id , hydroflow_plus :: runtime_support :: bincode :: serialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& data) . unwrap () . into ()) }",
+                                                                                        ],
+                                                                                    },
+                                                                                ),
+                                                                            ),
+                                                                            sink_expr: null,
+                                                                            source_expr: null,
+                                                                            deserialize_pipeline: Some(
+                                                                                Operator(
+                                                                                    Operator {
+                                                                                        path: "map",
+                                                                                        args: [
+                                                                                            "| res | { let (id , b) = res . unwrap () ; (id , hydroflow_plus :: runtime_support :: bincode :: deserialize :: < hydroflow_plus_test :: paxos :: ReplicaPayload > (& b) . unwrap ()) }",
+                                                                                        ],
+                                                                                    },
+                                                                                ),
+                                                                            ),
+                                                                            input: CrossProduct(
+                                                                                Persist(
+                                                                                    Map {
+                                                                                        f: { use hydroflow_plus :: __staged :: stream :: * ; | d | d . clone () },
+                                                                                        input: Source {
+                                                                                            source: Iter(
+                                                                                                { use hydroflow_plus_cli_integration :: __staged :: deploy :: * ; panic ! () },
+                                                                                            ),
+                                                                                            location_id: 2,
+                                                                                        },
+                                                                                    },
+                                                                                ),
+                                                                                Source {
+                                                                                    source: Iter(
+                                                                                        { use crate :: __staged :: paxos :: * ; [ReplicaPayload { seq : 1 , key : 10 , value : "Hello again, Berkeley!" . to_string () } , ReplicaPayload { seq : 2 , key : 10 , value : "Goodbye, Berkeley" . to_string () } , ReplicaPayload { seq : 0 , key : 10 , value : "Hello, Berkeley!" . to_string () } , ReplicaPayload { seq : 3 , key : 20 , value : "Hello, SF" . to_string () } , ReplicaPayload { seq : 5 , key : 20 , value : "Goodbye, SF" . to_string () }] },
+                                                                                    ),
+                                                                                    location_id: 2,
+                                                                                },
+                                                                            ),
+                                                                        },
+                                                                    },
+                                                                    CycleSource {
+                                                                        ident: Ident {
+                                                                            sym: cycle_0,
+                                                                        },
+                                                                        location_id: 3,
+                                                                    },
+                                                                ),
+                                                            ),
+                                                        },
+                                                    },
+                                                    Union(
+                                                        CycleSource {
+                                                            ident: Ident {
+                                                                sym: cycle_1,
+                                                            },
+                                                            location_id: 3,
+                                                        },
+                                                        Source {
+                                                            source: Iter(
+                                                                { use crate :: __staged :: paxos :: * ; vec ! [- 1] },
+                                                            ),
+                                                            location_id: 3,
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    },
+                                ),
+                            },
+                        },
+                    ),
+                },
+            },
+        ),
+    },
+]
