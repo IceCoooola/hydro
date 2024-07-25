@@ -15,7 +15,3 @@ pub(crate) mod two_pc;
 #[cfg(not(stageleft_macro))]
 pub mod two_pc;
 
-#[cfg(stageleft_macro)]
-pub(crate) mod pbft;
-#[cfg(not(stageleft_macro))]
-pub mod pbft;
