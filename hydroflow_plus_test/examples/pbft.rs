@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use hydro_deploy::{Deployment, HydroflowCrate};
 use hydroflow_plus_cli_integration::{DeployProcessSpec, DeployClusterSpec};
 use hydroflow_plus::*;
+use stageleft::RuntimeData;
 
 
 #[tokio::main]
@@ -34,7 +35,8 @@ async fn main() {
                     )
                 })
                 .collect()
-        })
+        }),
+        RuntimeData::new("Fake")
     );
 
     let mut deployment = deployment.into_inner();
