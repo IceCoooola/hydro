@@ -69,9 +69,9 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
     flow: &FlowBuilder<'a, D>,
     client_spec: &impl ProcessSpec<'a, D>,
     replicas_spec: &impl ClusterSpec<'a, D>,
-    f: RuntimeData<&'a u32>,
+    // f: RuntimeData<&'a u32>,
 ) {
-
+    // let f = 1u32;
     // Assume single client.
     let client = flow.process(client_spec);
     // Assume 4 replicas. f = 1. If want more or less participant, fix line 27 of examples/pbft.rs
@@ -123,6 +123,7 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
     let is_primary = flow.source_iter(&replicas, q!([0]))
         .bool_singleton(q!(move |id| id == r_id))
         .all_ticks();
+
     // have_primary is a single persisted stream that stores the current view number and the primary node.
     let have_primary = flow.source_iter(&replicas, q!([ViewNumber{view_number: 4, id: 0}])).all_ticks();
 
@@ -194,17 +195,24 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
 
     // have a persisted pre prepare stores all the pre-prepare messages.
     let r_persisted_pre_prepares = r_valid_pre_prepare.clone().all_ticks();
-
-    // r_persisted_pre_prepares_complete_cycle.complete(r_valid_pre_prepare.clone().union(r_persisted_pre_prepares.clone()).all_ticks());
     /* end phase pre-prepare */
 
 
     /* phase prepare */
 
     // replicas broadcast prepare message to all other replicas.
+    // have a cycle that record all the broadcasted prepare message, to prevent broadcast it second time.
+    // let (r_broadcasted_prepare_complete_cycle, r_broadcasted_prepare) = flow.cycle(&replicas);
     let r_receive_prepare = r_prepare_message.broadcast_bincode_interleaved(&replicas).tick_batch().unique();
+    
+    // filter out any request that has been broadcasted.
+    let r_receive_prepare_did_not_send = r_receive_prepare
+    .map(q!(|prepare: Prepare| (prepare.request.clone(), prepare)))
+    // .anti_join(r_broadcasted_prepare.clone())
+    .map(q!(|(request, prepare)| prepare));
+
     // check if the prepare message is valid by checking the view number and sequence number, and also if it is matched the previous pre-prepare request.
-    let r_receive_valid_prepare = r_receive_prepare
+    let r_receive_valid_prepare = r_receive_prepare_did_not_send
     .cross_product(r_persisted_pre_prepares)
     .filter_map(q!(move |(prepare, pre_prepare): (Prepare, PrePrepare)| {
         if prepare.view_number == pre_prepare.view_number && prepare.sequence_number == pre_prepare.sequence_number && prepare.request == pre_prepare.request && prepare.signature == pre_prepare.signature {
@@ -212,8 +220,8 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
         } else {
             None
         }
-    })
-    );
+    }));
+
     // count the valid prepare message received by the replica, do not count the prepare message sent by itself.
     let r_received_valid_prepare_count = r_receive_valid_prepare
     .clone()
@@ -227,7 +235,7 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
     let r_valid_prepare = r_receive_valid_prepare
     .cross_product(r_received_valid_prepare_count)
     .filter_map(q!(move |(prepare, (request, count)): (Prepare, (String, HashSet<u32>))| {
-        if count.len() >= (2*f+1).try_into().unwrap() && request == prepare.request {
+        if count.len() >= (3).try_into().unwrap() && request == prepare.request {
             Some(Prepared{view_number: prepare.view_number, sequence_number: prepare.sequence_number, request: prepare.request.clone(), signature: prepare.signature})
         } else {
             None
@@ -235,6 +243,13 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
     })
     );
 
+    // let r_new_broadcasted_prepare = r_valid_prepare.clone()
+    // .map(q!(|prepare| prepare.request.clone()))
+    // .union(r_broadcasted_prepare.clone())
+    // .all_ticks()
+    // .defer_tick();
+
+    // r_broadcasted_prepare_complete_cycle.complete(r_new_broadcasted_prepare);
     let r_valid_prepare_persisted = r_valid_prepare.clone().all_ticks();
     r_valid_prepare.clone().unique().for_each(q!(|prepare| println!("replica receive valid prepare message: {:?}", prepare)));
 
@@ -273,7 +288,7 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
     let r_valid_commit = r_receive_valid_commit
     .cross_product(r_received_valid_commit_count)
     .filter_map(q!(move |(commit, (request, count)): (Commit, (String, HashSet<u32>))| {
-        if count.len() >= (2*f+1).try_into().unwrap() && request == commit.request {
+        if count.len() >= (3).try_into().unwrap() && request == commit.request {
             Some(Committed{view_number: commit.view_number, sequence_number: commit.sequence_number, request: commit.request.clone(), signature: commit.signature})
         } else {
             None
@@ -312,9 +327,9 @@ pub fn pbft<'a, D: Deploy<'a, ClusterId = u32>>(
 pub fn pbft_runtime<'a>(
     flow: FlowBuilder<'a, CLIRuntime>,
     cli: RuntimeData<&'a HydroCLI<HydroflowPlusMeta>>,
-    f: RuntimeData<&'a u32>,
+    // f: RuntimeData<&'a u32>,
 ) -> impl Quoted<'a, Hydroflow<'a>> {
-    let _ = pbft(&flow, &cli, &cli, f);
+    let _ = pbft(&flow, &cli, &cli);
     flow.extract()
         .optimize_default()
         .with_dynamic_id(q!(cli.meta.subgraph_id))

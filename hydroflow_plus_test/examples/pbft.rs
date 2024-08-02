@@ -36,7 +36,7 @@ async fn main() {
                 })
                 .collect()
         }),
-        RuntimeData::new("Fake")
+        // RuntimeData::new("Fake")
     );
 
     let mut deployment = deployment.into_inner();
